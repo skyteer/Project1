@@ -4,8 +4,8 @@ import readlineSync from 'readline-sync';
 class Player {
   constructor() {
     this.hp = 300;
-    this.minatk = 10;
-    this.maxatk = this.minatk + Math.floor(this.minatk * 0.1);
+    this.minatk = 20;
+    this.maxatk = this.minatk + Math.floor(this.minatk * 0.5);
     this.succession = 40;
     this.run = 10;
     this.recovery = 30;
@@ -20,7 +20,7 @@ class Player {
       } else if (rulet <= 30) {
         this.minatk = this.minatk + Math.floor(Math.random() * (20 - 5) + 5);
       } else if (rulet <= 45) {
-        this.maxatk = this.maxatk + Math.floor(this.minatk * Math.random() * (1 - 0) + 1);
+        this.maxatk = this.maxatk + Math.floor(this.maxatk * Math.random() * (1 - 0) + 1);
       } else if (rulet <= 55) {
         this.succession = this.succession + Math.floor(Math.random() * (7 - 3) + 3);
       } else if (rulet <= 65) {
@@ -36,8 +36,8 @@ class Player {
   // 무한대인게 문제
   Recovery() {
     let rulet = Math.floor(Math.random() * (100 - 1) + 1);
-    if (rulet <= this.recovery){
-      this.hp = this.hp + Math.floor(Math.random() * (100 - 50) + 50)
+    if (rulet <= this.recovery) {
+      this.hp = this.hp + Math.floor(Math.random() * (300 - 100) + 100)
     }
   }
 
@@ -58,25 +58,36 @@ class Player {
     }
   }
 
-  Defence(user, target){
-    let rulet = Math.floor(Math.random() * (100 - 1)+1)
-    if(this.defence <= rulet){
+  Defence(user, target) {
+    let rulet = Math.floor(Math.random() * (100 - 1) + 1)
+    if (this.defence <= rulet) {
       user.attack(target);
-    }else {
+    } else {
       target.attack(user);
     }
   }
 
-  StageClearReco(user){
-    user.hp = user.hp + Math.floor(user.hp * 1.5)
+  StageClearReco(user) {
+    user.hp = user.hp + 300;
   }
 }
 
 class Monster {
   constructor(stage) {
-    this.hp = 100 + Math.floor(10 * stage);
+    this.hp = 250 + Math.floor(5 * stage);
     this.minatk = 10 + Math.floor(10 * stage);
-    this.maxatk = this.minatk + Math.floor(this.minatk * 0.1) + Math.floor(this.minatk * 0.75);
+    this.maxatk = this.minatk + Math.floor(this.minatk * 0.5);
+
+    if (stage > 1) {
+      let rulet = Math.floor(Math.random() * (100 - 1) + 1)
+      if (rulet <= 33) {
+        this.hp = this.hp + Math.floor(Math.random() * (50 - 20) + 20)
+      } else if (rulet <= 66) {
+        this.minatk = this.minatk + Math.floor(Math.random() * (20 - 5) + 5)
+      } else {
+        this.maxatk = this.maxatk + Math.floor(this.minatk * Math.random() * (1 - 0) + 1)
+      }
+    }
   }
 
   attack(target) {
@@ -91,7 +102,7 @@ function displayStatus(stage, player, monster) {
   console.log(
     chalk.cyanBright(`| Stage: ${stage} `) +
     chalk.blueBright(
-      `| 플레이어 정보`, `| 체력 ${player.hp}`, `| 공격력 ${player.minatk} ~ ${player.maxatk}`, `| 방어력${player.defence}`
+      `| 플레이어 정보`, `| 체력 ${player.hp}`, `| 공격력 ${player.minatk} ~ ${player.maxatk}`
     ) +
     chalk.redBright(
       `| 몬스터 정보 |`, `| 체력 ${monster.hp}`, `| 공격력 ${monster.minatk} ~ ${monster.maxatk}`
@@ -102,6 +113,7 @@ function displayStatus(stage, player, monster) {
 
 const battle = async (stage, player, monster) => {
   let logs = [];
+  let healCount = 0;
 
   while (player.hp > 0) {
     console.clear();
@@ -124,7 +136,7 @@ const battle = async (stage, player, monster) => {
         player.attack(monster);
         let damage = temp - monster.hp;
         logs.push(chalk.blueBright(`${damage}만큼 피해를 주었다.`));
-        
+
         let temp1 = player.hp;
         monster.attack(player);
         let damage1 = temp1 - player.hp;
@@ -136,9 +148,9 @@ const battle = async (stage, player, monster) => {
         player.Succession(player, monster);
         let damage2 = temp2 - monster.hp;
         logs.push(chalk.blueBright(`${damage2}만큼 피해를 주었다.`));
-        let damage3 = temp3 -player.hp
+        let damage3 = temp3 - player.hp
         logs.push(chalk.red(`${damage3}만큼 피해를 받았다.`));
-        
+
         break;
       case '3':
         let temp6 = player.hp
@@ -146,7 +158,7 @@ const battle = async (stage, player, monster) => {
         player.Defence(player, monster);
         let defence = player.hp
         let damage7 = temp7 - monster.hp
-        if(defence === temp6){
+        if (defence === temp6) {
           logs.push(chalk.blueBright(`방어에 성공해 피해를 받지않았다.`));
           logs.push(chalk.bgYellowBright(`${damage7}만큼 피해를 주었다.`));
         } else if (defence < temp6) {
@@ -154,8 +166,8 @@ const battle = async (stage, player, monster) => {
         }
         break;
       case '4':
-        let rulet = Math.floor(Math.random() * (100 - 1) +1 )
-        if(rulet <= player.run){
+        let rulet = Math.floor(Math.random() * (100 - 1) + 1)
+        if (rulet <= player.run) {
           logs.push(chalk.white(`무서워서 도망쳤다!`));
           monster.hp = 0;
         } else {
@@ -164,14 +176,26 @@ const battle = async (stage, player, monster) => {
           let damage = temp - player.hp;
           logs.push(chalk.red(`${damage}만큼 피해를 받았다.`));
         }
-      break;
-      case '5' :
-        let temp4 = player.hp; 
-        player.Recovery()
-        if(player.hp > temp4){
-          let reco = player.hp - temp4
-          logs.push(chalk.blue(`${reco}만큼 회복했다.`));
+        break;
+      case '5':
+        if (healCount < 10) {
+          let temp4 = player.hp;
+          player.Recovery()
+          if (player.hp > temp4) {
+            healCount++
+            let reco = player.hp - temp4;
+            logs.push(chalk.blue(`${reco}만큼 회복했다.`));
+          } else if (player.hp === temp4) {
+            let hp = player.hp;
+            monster.attack(player);
+            monster.attack(player);
+            let damage = hp - player.hp;
+            logs.push(chalk.red(`${damage}만큼 피해를 받았다.`));
+          } 
+        } else {
+          logs.push(chalk.red(`회복이 10번이 넘으면 사용할 수 없습니다.`));
         }
+        break;
       default:
         console.log("유효한 값을 입력해주세요.");
     }
@@ -186,7 +210,7 @@ export async function startGame() {
   console.clear();
   const player = new Player();
   let stage = 1;
-  let log = [];
+
 
   while (stage <= 10) {
     const monster = new Monster(stage);
@@ -198,14 +222,15 @@ export async function startGame() {
       console.clear();
       console.log("Game clear");
     } else if (monster.hp <= 0) {
-      log.push(chalk.blue("Next Stage"));
+      console.log("Next Stage");
       await battle(stage, player, monster);
     } else if (player.hp <= 0) {
       console.log("Game Over");
+      break;
     }
 
     player.up(stage);
-    
+
     player.StageClearReco(player);
 
     stage++;
