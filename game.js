@@ -3,29 +3,32 @@ import readlineSync from 'readline-sync';
 
 class Player {
   constructor() {
-    this.hp = 1000;
+    this.hp = 300;
     this.minatk = 10;
     this.maxatk = this.minatk + Math.floor(this.minatk * 0.1);
-    this.succession = 30;
+    this.succession = 40;
     this.run = 10;
     this.recovery = 30;
+    this.defence = 45;
   }
 
   up(stage) {
     let rulet = Math.floor(Math.random() * (100 - 1) + 1);
     if (stage >= 1) {
-      if (rulet <= 20) {
+      if (rulet <= 15) {
         this.hp = this.hp + Math.floor(Math.random() * (50 - 20) + 20);
-      } else if (rulet <= 40) {
+      } else if (rulet <= 30) {
         this.minatk = this.minatk + Math.floor(Math.random() * (20 - 5) + 5);
-      } else if (rulet <= 50) {
-        this.maxatk = this.minatk + Math.floor(this.minatk * Math.random() * (1 - 0) + 1);
-      } else if (rulet <= 60) {
+      } else if (rulet <= 45) {
+        this.maxatk = this.maxatk + Math.floor(this.minatk * Math.random() * (1 - 0) + 1);
+      } else if (rulet <= 55) {
         this.succession = this.succession + Math.floor(Math.random() * (7 - 3) + 3);
-      } else if (rulet <= 75) {
+      } else if (rulet <= 65) {
         this.run = this.run + Math.floor(Math.random() * (3 - 1) + 1);
-      } else {
+      } else if (rulet <= 80) {
         this.recovery = this.recovery + Math.floor(Math.random() * (10 - 2) + 2);
+      } else {
+        this.defence = this.defence + Math.floor(Math.random() * (10 - 3) + 3);
       }
     }
   }
@@ -34,7 +37,7 @@ class Player {
   Recovery() {
     let rulet = Math.floor(Math.random() * (100 - 1) + 1);
     if (rulet <= this.recovery){
-      this.hp = this.hp + Math.floor(Math.random() * (200 - 100) + 100)
+      this.hp = this.hp + Math.floor(Math.random() * (100 - 50) + 50)
     }
   }
 
@@ -53,6 +56,19 @@ class Player {
     } else {
       target.attack(user);
     }
+  }
+
+  Defence(user, target){
+    let rulet = Math.floor(Math.random() * (100 - 1)+1)
+    if(this.defence <= rulet){
+      user.attack(target);
+    }else {
+      target.attack(user);
+    }
+  }
+
+  StageClearReco(user){
+    user.hp = user.hp + Math.floor(user.hp * 1.5)
   }
 }
 
@@ -75,7 +91,7 @@ function displayStatus(stage, player, monster) {
   console.log(
     chalk.cyanBright(`| Stage: ${stage} `) +
     chalk.blueBright(
-      `| 플레이어 정보`, `| 체력 ${player.hp}`, `| 공격력 ${player.minatk} ~ ${player.maxatk}`
+      `| 플레이어 정보`, `| 체력 ${player.hp}`, `| 공격력 ${player.minatk} ~ ${player.maxatk}`, `| 방어력${player.defence}`
     ) +
     chalk.redBright(
       `| 몬스터 정보 |`, `| 체력 ${monster.hp}`, `| 공격력 ${monster.minatk} ~ ${monster.maxatk}`
@@ -95,7 +111,7 @@ const battle = async (stage, player, monster) => {
 
     console.log(
       chalk.green(
-        `\n1. 공격한다 2. 연속공격 (${player.succession}%) 3. 방어 4. 도망가기 (${player.run}%) 5. 힐 (${player.recovery}%)`,
+        `\n1. 공격한다 2. 연속공격 (${player.succession}%) 3. 방어 (55%) 4. 도망가기 (${player.run}%) 5. 힐 (${player.recovery}%)`,
       ),
     );
     const choice = readlineSync.question('당신의 선택은? ');
@@ -125,16 +141,16 @@ const battle = async (stage, player, monster) => {
         
         break;
       case '3':
-        let defence = Math.floor(Math.random() * (100 - 1) + 1);
-        if (defence <= 30) {
-          logs.push(chalk.blueBright("방어에 성공했다."));
-        } else {
-          logs.push(chalk.red("방어에 실패했다."));
-
-          let temp = player.hp;
-          monster.attack(player);
-          let damage = temp - player.hp;
-          logs.push(chalk.red(`${damage}만큼 피해를 받았다.`));
+        let temp6 = player.hp
+        let temp7 = monster.hp
+        player.Defence(player, monster);
+        let defence = player.hp
+        let damage7 = temp7 - monster.hp
+        if(defence === temp6){
+          logs.push(chalk.blueBright(`방어에 성공해 피해를 받지않았다.`));
+          logs.push(chalk.bgYellowBright(`${damage7}만큼 피해를 주었다.`));
+        } else if (defence < temp6) {
+          logs.push(chalk.red(`방어애 실패해 ${temp6 - defence}만큼 피해를 받았다.`));
         }
         break;
       case '4':
@@ -180,7 +196,7 @@ export async function startGame() {
 
     if (monster.hp <= 0 && stage === 10) {
       console.clear();
-      log.push(chalk.blue("Game clear"));
+      console.log("Game clear");
     } else if (monster.hp <= 0) {
       log.push(chalk.blue("Next Stage"));
       await battle(stage, player, monster);
@@ -189,6 +205,8 @@ export async function startGame() {
     }
 
     player.up(stage);
+    
+    player.StageClearReco(player);
 
     stage++;
   }
